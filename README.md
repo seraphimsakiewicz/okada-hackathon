@@ -13,12 +13,7 @@ A Python-based RESTful API application that enables bi-directional voice convers
 
 ## 🏗️ Architecture
 
-```
-Voice Input → Whisper API → LLM + RAG → OpenAI TTS → Audio Output
-                    ↑           ↓
-               Conversation   Qdrant
-                Memory       Vector DB
-```
+![Voice AI Architecture](Voice-AI-Architecture.png)
 
 ## 📋 API Endpoints
 
@@ -43,7 +38,7 @@ Voice Input → Whisper API → LLM + RAG → OpenAI TTS → Audio Output
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/seraphimsakiewicz/okada-hackathon
 cd okada-hackathon
 ```
 
@@ -123,7 +118,8 @@ curl -X POST -H "Content-Type: application/json" \
 
 ## 🧪 Testing
 
-The project includes comprehensive testing tools:
+The project includes testing scripts to ensure RAG and API responses are working properly based on
+provided initial and followup queries.
 
 ### Test All Properties
 ```bash
@@ -176,12 +172,6 @@ The system includes a real estate knowledge base with:
 
 The system intelligently resolves follow-up queries:
 
-**Example Conversation:**
-1. User: "Who manages 9 Times Sq, Suite 3A, Floor P3?"
-2. System: "Joshamee Gibbs, Sansa Stark, Sheldon Cooper, Sergio Perez"
-3. User: "What is the rent for that property?"
-4. System: Resolves "that property" → "9 Times Sq, Suite 3A, Floor P3"
-
 ## 📊 Performance Metrics
 
 All endpoints return timing information:
@@ -212,31 +202,6 @@ okada-hackathon/
 └── requirements.txt       # Dependencies
 ```
 
-## 🚀 Deployment
-
-The application is configured for Fly.io deployment:
-
-```bash
-# Deploy to Fly.io
-fly deploy
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
 ## 📄 License
 
 This project is licensed under the MIT License.
-
-## 🙋‍♂️ Support
-
-For questions or issues, please check the documentation or contact the development team.
-
----
-
-🤖 **Generated with Claude Code** - Comprehensive voice AI system for real estate property management.
