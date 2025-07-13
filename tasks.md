@@ -30,32 +30,35 @@
 3. **Document processing and indexing**
    
    **Implementation Details:**
-   - [ ] Create `/upload_rag_docs` endpoint that accepts multipart file uploads (PDF, TXT, CSV, JSON)
-   - [ ] Implement document text extraction (pypdf2 for PDF, pandas for CSV, json for JSON)
-   - [ ] Create text chunking function (overlap sliding window, 500-1000 chars per chunk)
-   - [ ] Generate embeddings using OpenAI text-embedding-ada-002 model
-   - [ ] Setup Qdrant collection with vector dimensions matching OpenAI embeddings (1536)
-   - [ ] Index the existing HackathonInternalKnowledgeBase.csv automatically on startup
+   - [x] Create `/upload_rag_docs` endpoint that accepts multipart file uploads (PDF, TXT, CSV, JSON)
+   - [x] Implement document text extraction (pypdf2 for PDF, pandas for CSV, json for JSON)
+   - [x] Create text chunking function (overlap sliding window, 500-1000 chars per chunk)
+   - [x] Generate embeddings using OpenAI text-embedding-ada-002 model
+   - [x] Setup Qdrant collection with vector dimensions matching OpenAI embeddings (1536)
+   - [x] Index the existing HackathonInternalKnowledgeBase.csv automatically on startup
    
    **Manual Testing:**
-   - [ ] Test file upload: `curl -X POST -F "file=@test.pdf" http://localhost:8000/upload_rag_docs`
-   - [ ] Test CSV upload: `curl -X POST -F "file=@HackathonInternalKnowledgeBase.csv" http://localhost:8000/upload_rag_docs`
-   - [ ] Check Qdrant dashboard/console to verify vectors are indexed
-   - [ ] Test with sample text file: create test.txt and upload via Swagger UI at /docs
+   - [x] Test file upload: `curl -X POST -F "file=@test.pdf" http://localhost:8000/upload_rag_docs`
+   - [x] Test CSV upload: `curl -X POST -F "file=@HackathonInternalKnowledgeBase.csv" http://localhost:8000/upload_rag_docs`
+   - [x] Check Qdrant dashboard/console to verify vectors are indexed
+   - [x] Test with sample text file: create test.txt and upload via Swagger UI at /docs
 
 4. **RAG retrieval system**
    
    **Implementation Details:**
-   - [ ] Create semantic search function that queries Qdrant with embedding similarity
-   - [ ] Implement relevance scoring and top-k retrieval (top 3-5 most relevant chunks)
-   - [ ] Create context formatting function that prepares retrieved docs for LLM injection
-   - [ ] Add metadata filtering capabilities (document source, upload date)
+   - [x] Create semantic search function that queries Qdrant with embedding similarity
+   - [x] Implement relevance scoring and top-k retrieval (top 3-5 most relevant chunks)
+   - [x] Create context formatting function that prepares retrieved docs for LLM injection
+   - [x] Add metadata filtering capabilities (document source, upload date)
    
    **Manual Testing:**
-   - [ ] Create test endpoint `/search` that takes a query and returns relevant documents
-   - [ ] Test search: `curl -X POST -H "Content-Type: application/json" -d '{"query": "real estate pricing"}' http://localhost:8000/search`
-   - [ ] Verify search returns relevant property data from the CSV
-   - [ ] Test different query types: location-based, price-based, broker-based searches
+   - [x] Create test endpoint `/search` that takes a query and returns relevant documents
+   - [x] Added additional test endpoints: `/search/top_k`, `/search/context`, `/search/metadata`, `/sources`
+   - [x] Test search: `curl -X POST -H "Content-Type: application/json" -d '{"query": "real estate pricing"}' http://localhost:8000/search`
+   - [x] Verify search returns relevant property data from the CSV
+   - [x] Test different query types: location-based, price-based, broker-based searches
+   - [x] Fixed Qdrant filter validation issues and implemented post-filtering fallback
+   - [x] Verified all 455 documents are properly indexed and searchable
 
 ### Phase 3: Core API Endpoints (3-4 hours)
 5. **Speech-to-Text endpoint**
