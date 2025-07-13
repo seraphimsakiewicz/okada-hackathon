@@ -272,8 +272,8 @@
     <div class="container">
         <div class="header">
             <h1>🎤 Voice Real Estate Assistant</h1>
-            <p>Ask about properties using voice or text. Click "Start Recording", speak your question, then click "Stop
-                Recording" to send.</p>
+            <p>Ask about properties using voice or text. Click "Start Recording", speak your
+            question, then click "Stop Recording" to send.</p>
         </div>
 
         <div id="status" class="status info" style="display: none;">
@@ -282,8 +282,9 @@
 
         <div id="conversation" class="conversation">
             <div class="message assistant-message">
-                👋 Welcome! I'm your real estate assistant. I can help you find information about properties across NYC.
-                You can ask about associates, rent prices, floor details, and more!
+                👋 Welcome! I'm your real estate assistant. I can help you find information about
+                properties across NYC. You can ask about associates, rent prices, floor details, and
+                more!
             </div>
         </div>
 
@@ -300,15 +301,16 @@
         </div>
 
         <div class="input-group">
-            <input type="text" id="textInput" class="form-control" placeholder="Or type your question here..."
-                onkeypress="handleKeyPress(event)">
+            <input type="text" id="textInput" class="form-control" placeholder="Or type your
+            question here..." onkeypress="handleKeyPress(event)">
             <button id="sendBtn" class="btn btn-success">Send 📤</button>
         </div>
 
         <div class="examples">
             <h3>💡 Try these examples:</h3>
             <ul>
-                <li onclick="sendMessage('Who are the associates that manage the property on 36 W 36th St?')">
+                <li onclick="sendMessage('Who are the associates that manage the property on 36 W
+                36th St?')">
                     "Who manages 36 W 36th St?"
                 </li>
                 <li onclick="sendMessage('What is the rent for 9 Times Sq, Suite 3A, Floor P3?')">
@@ -360,7 +362,7 @@
                     options.mimeType = 'audio/webm';
                 }
                 if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                    options.mimeType = 'audio/ogg;codecs=opus';
+                    options.mimeType = 'audio/webm;codecs=opus';
                 }
                 if (!MediaRecorder.isTypeSupported(options.mimeType)) {
                     delete options.mimeType; // Use default
@@ -377,6 +379,9 @@
                     // Use webm format which is supported by OpenAI
                     const mimeType = mediaRecorder.mimeType || 'audio/webm';
                     const audioBlob = new Blob(audioChunks, { type: mimeType });
+                    // Show the user's recorded audio in the conversation
+                    const userAudioUrl = URL.createObjectURL(audioBlob);
+                    addAudioMessage(userAudioUrl, 'user');
                     sendVoiceMessage(audioBlob);
                     stream.getTracks().forEach(track => track.stop());
                 };
@@ -443,7 +448,10 @@
 
                     // Play audio response
                     if (data.audio_url) {
-                        playAudio(data.audio_url);
+                        const safeUrl = adjustAudioUrl(data.audio_url);
+                        playAudio(safeUrl);
+                        // Append assistant audio to the chat
+                        addAudioMessage(safeUrl, 'assistant');
                     }
 
                     showMetrics(data.timing);
@@ -529,7 +537,7 @@
         }
 
         function playAudio(audioUrl) {
-            const audio = new Audio(audioUrl);
+            const audio = new Audio(adjustAudioUrl(audioUrl));
             audio.play().catch(error => {
                 console.error('Audio play error:', error);
             });
@@ -538,9 +546,32 @@
         function addMessage(message, type) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}-message`;
-            messageDiv.textContent = message;
+            messageDiv.innerHTML = formatMessageText(message);
 
             conversation.appendChild(messageDiv);
+            conversation.scrollTop = conversation.scrollHeight;
+        }
+
+        // Helper: turn simple markdown (**bold**) and newlines into HTML
+        function formatMessageText(text) {
+            if (!text) return '';
+            let html = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // bold
+                .replace(/\n/g, '<br>'); // line breaks
+            return html;
+        }
+
+        // Helper: append an <audio> element with controls
+        function addAudioMessage(src, type) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `message ${type}-message`;
+
+            const audio = document.createElement('audio');
+            audio.controls = true;
+            audio.src = src;
+
+            wrapper.appendChild(audio);
+            conversation.appendChild(wrapper);
             conversation.scrollTop = conversation.scrollHeight;
         }
 
@@ -619,6 +650,15 @@
             .catch(() => {
                 showStatus('⚠️ Microphone access denied. Voice features disabled.', 'error');
             });
+
+        // Helper: backend returns "/static/audio/..." but Flask proxy is "/audio/...". Normalize.
+        function adjustAudioUrl(url) {
+            if (!url) return url;
+            if (url.startsWith('/static/audio/')) {
+                return '/audio/' + url.substring('/static/audio/'.length);
+            }
+            return url;
+        }
     </script>
 </body>
 
