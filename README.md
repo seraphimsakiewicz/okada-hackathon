@@ -17,6 +17,8 @@ A Python-based RESTful API application that enables bi-directional voice convers
 
 ## 📋 API Endpoints
 
+- Access the endpoints via http://localhost:8000/docs (or via curl) after you start the backend API, instructions below.
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/transcribe` | POST | Voice to text conversion |
@@ -57,6 +59,14 @@ cp .env.example .env
 ```bash
 python main.py
 ```
+
+**IMPORTANT:** On first startup, the API automatically indexes the included real estate knowledge base
+(`HackathonInternalKnowledgeBase.csv`) if no documents are found in the vector database. This
+ensures RAG functionality works immediately. You can still upload additional documents using the
+`/upload_rag_docs` endpoint - , but they will be added to the existing knowledge base.
+
+If you'd like to prevent the automatic indexing of the `HackathonInternalKnowledgeBase.csv`, feel
+free to remove it BEFORE running python main.py
 
 5. Run the Flask frontend (in a new terminal):
 ```bash
@@ -114,6 +124,13 @@ curl -X POST -H "Content-Type: application/json" \
 curl -X POST -H "Content-Type: application/json" \
   -d '{"conversation_id": "voice1", "message": "Tell me about Times Square properties"}' \
   http://localhost:8000/converse
+```
+
+#### Upload Additional Documents
+```bash
+curl -X POST "http://localhost:8000/upload_rag_docs" \
+  -F "files=@your_document.pdf" \
+  -F "files=@another_document.txt"
 ```
 
 ## 🧪 Testing

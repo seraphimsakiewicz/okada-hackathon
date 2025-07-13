@@ -107,25 +107,31 @@ async def startup_event():
     """Initialize the application and index default documents"""
     logger.info("Starting Voice Conversational AI API...")
     
-    # Check if HackathonInternalKnowledgeBase.csv exists and index it
+    # Check if HackathonInternalKnowledgeBase.csv exists and index it if not already indexed
     csv_file = "rag_data/HackathonInternalKnowledgeBase.csv"
     if os.path.exists(csv_file):
         try:
-            logger.info(f"{csv_file} found, refraining from reindexing for now...")
-            # logger.info(f"Found {csv_file}, indexing automatically...")
-            # start_time = time.time()
+            # Check if collection already has documents to avoid reindexing
+            collection_info = rag_service.get_collection_info()
+            points_count = collection_info.get('points_count', 0)
             
-            # # Extract documents from CSV
-            # documents = doc_processor.extract_text(csv_file, csv_file)
-            
-            # # Process into chunks
-            # processed_docs = doc_processor.process_documents(documents)
-            
-            # # Index in vector database
-            # result = rag_service.index_documents(processed_docs)
-            
-            # end_time = time.time()
-            # logger.info(f"Indexed {result['indexed']} chunks from {csv_file} in {end_time - start_time:.2f}s")
+            if points_count == 0:
+                logger.info(f"Found {csv_file}, indexing automatically...")
+                start_time = time.time()
+                
+                # Extract documents from CSV
+                documents = doc_processor.extract_text(csv_file, csv_file)
+                
+                # Process into chunks
+                processed_docs = doc_processor.process_documents(documents)
+                
+                # Index in vector database
+                result = rag_service.index_documents(processed_docs)
+                
+                end_time = time.time()
+                logger.info(f"Indexed {result['indexed']} chunks from {csv_file} in {end_time - start_time:.2f}s")
+            else:
+                logger.info(f"Collection already contains {points_count} documents, skipping reindexing of {csv_file}")
             
         except Exception as e:
             logger.error(f"Failed to index {csv_file}: {e}")
