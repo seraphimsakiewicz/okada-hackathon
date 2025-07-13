@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
+import logging
+from src.clients import api_clients
 
 app = FastAPI(
     title="Voice Conversational AI API",
@@ -31,7 +33,37 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "message": "API is operational"}
+    try:
+        openai_status = api_clients.test_openai_connection()
+        qdrant_status = api_clients.test_qdrant_connection()
+        
+        if openai_status and qdrant_status:
+            return {
+                "status": "healthy", 
+                "message": "API is operational",
+                "services": {
+                    "openai": "connected",
+                    "qdrant": "connected"
+                }
+            }
+        else:
+            return {
+                "status": "degraded",
+                "message": "Some services unavailable",
+                "services": {
+                    "openai": "connected" if openai_status else "disconnected",
+                    "qdrant": "connected" if qdrant_status else "disconnected"
+                }
+            }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "message": f"Service check failed: {str(e)}",
+            "services": {
+                "openai": "unknown",
+                "qdrant": "unknown"
+            }
+        }
 
 @app.post("/transcribe")
 async def transcribe_audio():
