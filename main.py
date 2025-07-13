@@ -246,6 +246,15 @@ async def chat(request: ChatRequest):
     logger.info(f"🚀 Chat request started - conversation_id: {request.conversation_id}, message: '{request.message[:50]}...'")
     
     try:
+        # Get or create conversation history first (needed for RAG reference resolution)
+        logger.info("💾 Managing conversation history...")
+        if request.conversation_id not in conversations:
+            conversations[request.conversation_id] = []
+            logger.info(f"🆕 Created new conversation: {request.conversation_id}")
+        
+        conversation_history = conversations[request.conversation_id]
+        logger.info(f"📜 Conversation history length: {len(conversation_history)} messages")
+
         # Retrieve relevant context from RAG system if no context provided
         rag_context_used = False
         rag_sources = []
@@ -255,15 +264,16 @@ async def chat(request: ChatRequest):
         
         if not context_text:
             try:
-                logger.info("🔍 Starting RAG retrieval...")
+                logger.info("🔍 Starting RAG retrieval with reference resolution...")
                 # Get relevant context from RAG system
                 rag_start = time.time()
                 
-                # Get relevant context from RAG system
+                # Get relevant context from RAG system with conversation history for reference resolution
                 try:
-                    rag_results = rag_service.get_contextualized_response_data(
+                    rag_results = await rag_service.get_contextualized_response_data(
                         query=request.message,
-                        k=3
+                        k=3,
+                        conversation_history=conversation_history  # Pass conversation history for reference resolution
                     )
                     rag_time = time.time() - rag_start
                     logger.info(f"✅ RAG retrieval completed in {rag_time:.2f}s")
@@ -287,15 +297,6 @@ async def chat(request: ChatRequest):
                     
             except Exception as e:
                 logger.error(f"❌ Failed to retrieve RAG context: {e}")
-        
-        # Get or create conversation history
-        logger.info("💾 Managing conversation history...")
-        if request.conversation_id not in conversations:
-            conversations[request.conversation_id] = []
-            logger.info(f"🆕 Created new conversation: {request.conversation_id}")
-        
-        conversation_history = conversations[request.conversation_id]
-        logger.info(f"📜 Conversation history length: {len(conversation_history)} messages")
         
         # Build messages for OpenAI
         logger.info("🔧 Building OpenAI messages...")

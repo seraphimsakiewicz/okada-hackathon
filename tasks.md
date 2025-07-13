@@ -99,7 +99,7 @@
    - [x] Hybrid address search implemented for accurate property matching
    
    **Known Limitation:**
-   - [ ] **Nice-to-have**: Fix follow-up queries (e.g., "What is the rent for that property?" → "What is the rent for 36 W 36th St?")
+   - [x] **Nice-to-have**: Fix follow-up queries (e.g., "What is the rent for that property?" → "What is the rent for 36 W 36th St?")
 
 7. **Text-to-Speech endpoint**
    

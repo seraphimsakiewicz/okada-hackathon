@@ -5,6 +5,7 @@ from qdrant_client.models import Distance, VectorParams, PointStruct, Collection
 from qdrant_client.http.exceptions import UnexpectedResponse
 import uuid
 import time
+import re
 from ..clients import api_clients
 from ..config import get_settings
 
@@ -230,28 +231,102 @@ class RAGService:
             logger.error(f"Error searching documents: {e}")
             raise
     
-    def get_top_relevant_chunks(self, query: str, k: int = 3) -> List[Dict[str, Any]]:
-        """Get top-k most relevant document chunks optimized for LLM context injection"""
+    async def resolve_references_with_llm(self, query: str, conversation_history: List[Dict]) -> str:
+        """Use GPT to rewrite queries with resolved references"""
+        try:
+            # Check if query contains references that need resolution
+            reference_keywords = ["that", "it", "this", "the property", "that property", "that place", "above", "previous"]
+            if not any(keyword in query.lower() for keyword in reference_keywords):
+                logger.info(f"🔍 No references detected in query: '{query}' - skipping resolution")
+                return query  # No references to resolve
+            
+            logger.info(f"🔄 Resolving references in query: '{query}'")
+            
+            # Get recent conversation context (last 2-3 exchanges)
+            recent_context = []
+            for msg in conversation_history[-6:]:  # Last 3 exchanges (user + assistant)
+                role = msg.get('role', 'unknown')
+                content = msg.get('content', '')
+                if content.strip():
+                    recent_context.append(f"{role.capitalize()}: {content[:500]}")  # Limit length
+            
+            context_text = "\n".join(recent_context) if recent_context else "No previous conversation context available."
+            
+            # Create rewrite prompt
+            rewrite_prompt = f"""Given this conversation context:
+{context_text}
+
+Rewrite the following query to be explicit by replacing vague references like "that property", "it", "this", "that place" with specific addresses, property details, or concrete terms mentioned in the conversation context.
+
+Query to rewrite: {query}
+
+Rules:
+- If the context mentions specific addresses, use them to replace references
+- If no specific address is clear, keep the query as is
+- Return ONLY the rewritten query, nothing else
+- Do not add extra words or explanations
+
+Rewritten query:"""
+
+            logger.info(f"📝 Sending rewrite prompt to LLM...")
+            
+            # Use OpenAI to rewrite the query
+            response = api_clients.openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": rewrite_prompt}],
+                max_tokens=100,
+                temperature=0.1  # Low temperature for consistent rewrites
+            )
+            
+            rewritten_query = response.choices[0].message.content.strip()
+            
+            # Log the rewrite result with additional debug info
+            if rewritten_query.lower() != query.lower():
+                logger.info(f"✅ FOLLOW-UP RESOLVED: '{query}' → '{rewritten_query}'")
+            else:
+                logger.info(f"🔄 No changes needed: '{query}'")
+                
+            return rewritten_query
+            
+        except Exception as e:
+            logger.error(f"❌ Error resolving references with LLM: {e}")
+            # Fallback to original query if rewriting fails
+            return query
+
+    async def get_top_relevant_chunks(self, query: str, k: int = 3, conversation_history: Optional[List[Dict]] = None) -> List[Dict[str, Any]]:
+        """Get top-k most relevant document chunks optimized for LLM context injection with reference resolution"""
         try:
             # Ensure k is within reasonable bounds (3-5 for optimal context)
             k = max(3, min(k, 5))
             
-            # Check if this is an address-specific query
-            import re
+            # Resolve references if conversation history is provided
+            resolved_query = query
+            if conversation_history:
+                logger.info(f"🗣️ Conversation history provided: {len(conversation_history)} messages")
+                # Use await since we're in an async function
+                try:
+                    resolved_query = await self.resolve_references_with_llm(query, conversation_history)
+                except Exception as resolve_error:
+                    logger.warning(f"⚠️ Reference resolution failed, using original query: {resolve_error}")
+                    resolved_query = query
+            else:
+                logger.info(f"🚫 No conversation history provided for reference resolution")
+            
+            # Check if this is an address-specific query (use resolved query)
             address_pattern = r'\d+\s+[NESW]\s+\d+\w*\s+[Ss]t(?:reet)?'
-            address_match = re.search(address_pattern, query, re.IGNORECASE)
+            address_match = re.search(address_pattern, resolved_query, re.IGNORECASE)
             
             if address_match:
                 logger.info(f"🏠 Detected address query: {address_match.group()}")
                 # Use hybrid search for address queries
-                return self._hybrid_address_search(query, address_match.group(), k)
+                return self._hybrid_address_search(resolved_query, address_match.group(), k)
             
             # Use moderate score threshold for top-k to ensure quality
             score_threshold = 0.2  # Lower threshold to get more candidates
             
-            # Search with higher limit to have more candidates for filtering
+            # Search with higher limit to have more candidates for filtering (use resolved query)
             results = self.search_documents(
-                query=query, 
+                query=resolved_query,  # Use the resolved query for better results
                 limit=k * 2,  # Get more candidates
                 score_threshold=score_threshold
             )
@@ -267,7 +342,7 @@ class RAGService:
             # If we don't have enough quality results, get more with lower threshold
             if len(top_results) < k:
                 additional_results = self.search_documents(
-                    query=query,
+                    query=resolved_query,  # Use resolved query here too
                     limit=k * 3,
                     score_threshold=0.1  # Much lower threshold for fallback
                 )
@@ -278,7 +353,9 @@ class RAGService:
                     if result not in top_results and len(result['content']) > 50:
                         top_results.append(result)
             
-            logger.info(f"Retrieved top-{len(top_results)} relevant chunks for query: '{query}'")
+            logger.info(f"📄 Retrieved {len(top_results)} chunks for query: '{query}' → resolved: '{resolved_query}'")
+            if top_results:
+                logger.info(f"🏆 Top result score: {top_results[0].get('enhanced_score', top_results[0].get('score', 'N/A')):.3f}")
             return top_results[:k]  # Ensure we return exactly k results
             
         except Exception as e:
@@ -368,11 +445,11 @@ class RAGService:
         
         return formatted_context
     
-    def get_contextualized_response_data(self, query: str, k: int = 3) -> Dict[str, Any]:
-        """Get both retrieved documents and formatted context for LLM in one call"""
+    async def get_contextualized_response_data(self, query: str, k: int = 3, conversation_history: Optional[List[Dict]] = None) -> Dict[str, Any]:
+        """Get both retrieved documents and formatted context for LLM in one call with reference resolution"""
         try:
-            # Get top relevant chunks
-            relevant_docs = self.get_top_relevant_chunks(query, k)
+            # Get top relevant chunks with conversation history for reference resolution
+            relevant_docs = await self.get_top_relevant_chunks(query, k, conversation_history)
             
             # Format context for LLM
             formatted_context = self.format_context_for_llm(relevant_docs, query)
