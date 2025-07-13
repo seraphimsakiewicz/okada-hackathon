@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Conversational AI - Real Estate Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .conversation {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 2px solid #e9ecef;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+
+        .user-message {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .user-voice-message {
+            background: #6f42c1;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .assistant-message {
+            background: white;
+            color: #333;
+            border: 1px solid #dee2e6;
+        }
+
+        .voice-indicator {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .audio-player {
+            margin: 10px 0;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .recording {
+            background: #dc3545 !important;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 50px;
+            font-size: 1em;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .audio-player {
+            margin: 10px 0;
+            width: 100%;
+        }
+
+        .examples {
+            background: #e9f7ef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .examples h3 {
+            color: #155724;
+            margin-bottom: 15px;
+        }
+
+        .examples ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .examples li {
+            padding: 8px 0;
+            border-bottom: 1px solid #c3e6cb;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .examples li:hover {
+            background: rgba(40, 167, 69, 0.1);
+            border-radius: 5px;
+            padding-left: 10px;
+        }
+
+        .examples li:last-child {
+            border-bottom: none;
+        }
+
+        .metrics {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 Voice Real Estate Assistant</h1>
+            <p>Ask about properties using voice or text. Click "Start Recording", speak your question, then click "Stop Recording" to send.</p>
+        </div>
+
+        <div id="status" class="status info" style="display: none;">
+            Ready to chat!
+        </div>
+
+        <div id="conversation" class="conversation">
+            <div class="message assistant-message">
+                👋 Welcome! I'm your real estate assistant. I can help you find information about properties across NYC. You can ask about associates, rent prices, floor details, and more!
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="recordBtn" class="btn btn-primary">
+                🎤 Start Recording
+            </button>
+            <button id="stopBtn" class="btn btn-danger" style="display: none;">
+                ⏹️ Stop Recording
+            </button>
+            <button id="resetBtn" class="btn btn-danger">
+                🔄 Reset Chat
+            </button>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="textInput" class="form-control" placeholder="Or type your question here..." onkeypress="handleKeyPress(event)">
+            <button id="sendBtn" class="btn btn-success">Send 📤</button>
+        </div>
+
+        <div class="examples">
+            <h3>💡 Try these examples:</h3>
+            <ul>
+                <li onclick="sendMessage('Who are the associates that manage the property on 36 W 36th St?')">
+                    "Who manages 36 W 36th St?"
+                </li>
+                <li onclick="sendMessage('What is the rent for 9 Times Sq, Suite 3A, Floor P3?')">
+                    "What's the rent for 9 Times Sq, Suite 3A, Floor P3?"
+                </li>
+                <li onclick="sendMessage('Tell me about properties on Broadway')">
+                    "Tell me about properties on Broadway"
+                </li>
+                <li onclick="sendMessage('Who manages 345 Seventh Avenue?')">
+                    "Who manages 345 Seventh Avenue?"
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let conversationId = 'web_' + Math.random().toString(36).substr(2, 9);
+        let isRecording = false;
+
+        const recordBtn = document.getElementById('recordBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const textInput = document.getElementById('textInput');
+        const conversation = document.getElementById('conversation');
+        const status = document.getElementById('status');
+
+        // Initialize
+        showStatus('Ready to chat! 🚀', 'info');
+
+        // Recording functionality - click to start/stop
+        recordBtn.addEventListener('click', startRecording);
+        
+        stopBtn.addEventListener('click', stopRecording);
+        resetBtn.addEventListener('click', resetConversation);
+        sendBtn.addEventListener('click', sendTextMessage);
+
+        async function startRecording() {
+            if (isRecording) return;
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Use supported audio format for better compatibility
+                const options = { mimeType: 'audio/webm;codecs=opus' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options.mimeType = 'audio/webm';
+                }
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options.mimeType = 'audio/ogg;codecs=opus';
+                }
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    delete options.mimeType; // Use default
+                }
+                
+                mediaRecorder = new MediaRecorder(stream, options);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = () => {
+                    // Use webm format which is supported by OpenAI
+                    const mimeType = mediaRecorder.mimeType || 'audio/webm';
+                    const audioBlob = new Blob(audioChunks, { type: mimeType });
+                    sendVoiceMessage(audioBlob);
+                    stream.getTracks().forEach(track => track.stop());
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                
+                recordBtn.classList.add('recording');
+                recordBtn.textContent = '🔴 Recording...';
+                recordBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-flex';
+                showStatus('🎤 Recording... Click stop when done', 'info');
+                
+            } catch (error) {
+                console.error('Recording error:', error);
+                showStatus('Error accessing microphone. Please check permissions.', 'error');
+            }
+        }
+
+        function stopRecording() {
+            if (!isRecording) return;
+            
+            mediaRecorder.stop();
+            isRecording = false;
+            
+            recordBtn.classList.remove('recording');
+            recordBtn.textContent = '🎤 Start Recording';
+            recordBtn.style.display = 'inline-flex';
+            stopBtn.style.display = 'none';
+            showStatus('Processing your voice message...', 'info');
+        }
+
+        async function sendVoiceMessage(audioBlob) {
+            try {
+                const formData = new FormData();
+                // Use proper file extension based on blob type
+                let filename = 'recording.webm';
+                if (audioBlob.type.includes('ogg')) {
+                    filename = 'recording.ogg';
+                } else if (audioBlob.type.includes('wav')) {
+                    filename = 'recording.wav';
+                } else if (audioBlob.type.includes('mp4')) {
+                    filename = 'recording.mp4';
+                }
+                
+                formData.append('audio', audioBlob, filename);
+                formData.append('conversation_id', conversationId);
+                
+                showStatus('🎤 Transcribing and processing...', 'info');
+                
+                const response = await fetch('/api/converse', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Add user message (transcribed)
+                    addMessage(data.transcribed_text, 'user');
+                    
+                    // Add assistant response
+                    addMessage(data.chat_response, 'assistant');
+                    
+                    // Play audio response
+                    if (data.audio_url) {
+                        playAudio(data.audio_url);
+                    }
+                    
+                    showMetrics(data.timing);
+                    showStatus('✅ Voice conversation complete!', 'success');
+                    
+                } else {
+                    showStatus(`Error: ${data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Voice message error:', error);
+                showStatus('Error processing voice message', 'error');
+            }
+        }
+
+        async function sendTextMessage() {
+            const message = textInput.value.trim();
+            if (!message) return;
+            
+            sendMessage(message);
+        }
+
+        async function sendMessage(message) {
+            try {
+                textInput.value = '';
+                addMessage(message, 'user');
+                showStatus('🤔 Thinking...', 'info');
+                
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        conversation_id: conversationId,
+                        message: message
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addMessage(data.response, 'assistant');
+                    
+                    // Convert response to speech
+                    await speakResponse(data.response);
+                    
+                    showMetrics({
+                        chat_time: data.processing_time,
+                        rag_used: data.rag_context_used
+                    });
+                    showStatus('✅ Response ready!', 'success');
+                    
+                } else {
+                    showStatus(`Error: ${data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Send message error:', error);
+                showStatus('Error sending message', 'error');
+            }
+        }
+
+        async function speakResponse(text) {
+            try {
+                const response = await fetch('/api/speak', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        voice: 'alloy'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.audio_url) {
+                    playAudio(data.audio_url);
+                }
+                
+            } catch (error) {
+                console.error('Speak error:', error);
+            }
+        }
+
+        function playAudio(audioUrl) {
+            const audio = new Audio(audioUrl);
+            audio.play().catch(error => {
+                console.error('Audio play error:', error);
+            });
+        }
+
+        function addMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = message;
+            
+            conversation.appendChild(messageDiv);
+            conversation.scrollTop = conversation.scrollHeight;
+        }
+
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        function showMetrics(timing) {
+            // Remove existing metrics
+            const existingMetrics = conversation.querySelector('.metrics');
+            if (existingMetrics) {
+                existingMetrics.remove();
+            }
+            
+            const metricsDiv = document.createElement('div');
+            metricsDiv.className = 'metrics';
+            
+            let metricsText = '⚡ Performance: ';
+            if (timing.chat_time) metricsText += `Chat: ${timing.chat_time.toFixed(2)}s `;
+            if (timing.tts_time) metricsText += `TTS: ${timing.tts_time.toFixed(2)}s `;
+            if (timing.transcribe_time) metricsText += `STT: ${timing.transcribe_time.toFixed(2)}s `;
+            if (timing.total_time) metricsText += `Total: ${timing.total_time.toFixed(2)}s `;
+            if (timing.rag_used) metricsText += '| 📚 RAG: Used';
+            
+            metricsDiv.textContent = metricsText;
+            conversation.appendChild(metricsDiv);
+            conversation.scrollTop = conversation.scrollHeight;
+        }
+
+        async function resetConversation() {
+            try {
+                await fetch('/api/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        conversation_id: conversationId
+                    })
+                });
+                
+                // Clear conversation
+                conversation.innerHTML = `
+                    <div class="message assistant-message">
+                        👋 Conversation reset! I'm ready to help you with real estate questions.
+                    </div>
+                `;
+                
+                showStatus('🔄 Conversation reset successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Reset error:', error);
+                showStatus('Error resetting conversation', 'error');
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendTextMessage();
+            }
+        }
+
+        // Check microphone permission on load
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(() => {
+                console.log('Microphone permission granted');
+            })
+            .catch(() => {
+                showStatus('⚠️ Microphone access denied. Voice features disabled.', 'error');
+            });
+    </script>
+</body>
+</html>

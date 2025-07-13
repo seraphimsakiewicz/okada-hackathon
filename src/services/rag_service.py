@@ -262,6 +262,7 @@ Query to rewrite: {query}
 
 Rules:
 - If the context mentions specific addresses, use them to replace references
+- Include ALL specific details like floor, suite, unit numbers from the context
 - If no specific address is clear, keep the query as is
 - Return ONLY the rewritten query, nothing else
 - Do not add extra words or explanations
@@ -313,13 +314,61 @@ Rewritten query:"""
                 logger.info(f"🚫 No conversation history provided for reference resolution")
             
             # Check if this is an address-specific query (use resolved query)
-            address_pattern = r'\d+\s+[NESW]\s+\d+\w*\s+[Ss]t(?:reet)?'
-            address_match = re.search(address_pattern, resolved_query, re.IGNORECASE)
+            # Enhanced pattern to handle speech-to-text variations
+            address_patterns = [
+                r'\d+\s+[NESW]\s+\d+\w*\s+[Ss]t?(?:reet)?',  # Standard: "36 W 36th St", "60 W 45th S" (typo)
+                r'\d+\w*\s+(?:West|East|North|South),?\s+\d+\w*\s+[Ss]t(?:reet)?',  # Speech: "36th West, 36th Street"
+                r'\d+\s+(?:West|East|North|South)\s+\d+\w*\s+[Ss]t(?:reet)?',  # Alternative: "36 West 36th Street"
+                r'\d+\s+[A-Za-z\s]+(?:Avenue|Ave|Street|St|Square|Sq|Plaza|Pl|Boulevard|Blvd)',  # Avenue/Square format: "345 Seventh Avenue", "9 Times Sq"
+                r'\d+(?:-\d+)?\s+Broadway',  # Broadway format: "1162 Broadway", "1271-1273 Broadway"
+                r'\d+\s+\d+\w*\s+Ave',  # Ordinal Avenue: "347 5th Ave"
+                r'\d+\s+[A-Za-z]+(?:\s+[A-Za-z]+)*$',  # Single word streets: "183 Bowery"
+            ]
+            
+            address_match = None
+            for pattern in address_patterns:
+                address_match = re.search(pattern, resolved_query, re.IGNORECASE)
+                if address_match:
+                    break
             
             if address_match:
-                logger.info(f"🏠 Detected address query: {address_match.group()}")
-                # Use hybrid search for address queries
-                return self._hybrid_address_search(resolved_query, address_match.group(), k)
+                detected_address = address_match.group()
+                logger.info(f"🏠 Detected address query: {detected_address}")
+                
+                # Check if query includes floor/suite specificity (handle different orders)
+                floor_suite_patterns = [
+                    r'(?:floor|fl\.?)\s*([A-Za-z]?\d+),?\s*(?:suite|ste\.?)\s*([A-Za-z0-9]+)',  # Floor P4, Suite 403
+                    r'(?:suite|ste\.?)\s*([A-Za-z0-9]+),?\s*(?:floor|fl\.?)\s*([A-Za-z]?\d+)',  # Suite 3A, Floor P3
+                    r'(?:on|at)?\s*(?:floor|fl\.?)\s*([A-Za-z]?\d+).*?(?:suite|ste\.?)\s*([A-Za-z0-9]+)',  # on floor P4 ... suite 403
+                    r'(?:on|at)?\s*(?:suite|ste\.?)\s*([A-Za-z0-9]+).*?(?:floor|fl\.?)\s*([A-Za-z]?\d+)',  # suite 3A ... floor P3
+                ]
+                
+                floor_suite_match = None
+                floor = None
+                suite = None
+                
+                for i, pattern in enumerate(floor_suite_patterns):
+                    match = re.search(pattern, resolved_query, re.IGNORECASE)
+                    if match:
+                        if i % 2 == 0:  # Floor first patterns (0, 2)
+                            floor = match.group(1)
+                            suite = match.group(2)
+                        else:  # Suite first patterns (1, 3)
+                            suite = match.group(1)
+                            floor = match.group(2)
+                        floor_suite_match = match
+                        break
+                
+                if floor_suite_match:
+                    logger.info(f"🏢 Detected floor/suite specificity: Floor {floor}, Suite {suite}")
+                    # Use enhanced granular search for floor/suite queries
+                    return self._granular_property_search(resolved_query, detected_address, floor, suite, k)
+                else:
+                    # Normalize speech-to-text address format
+                    normalized_address = self._normalize_speech_address(detected_address)
+                    logger.info(f"🔄 Normalized address: '{detected_address}' → '{normalized_address}'")
+                    # Use hybrid search for address queries
+                    return self._hybrid_address_search(resolved_query, normalized_address, k)
             
             # Use moderate score threshold for top-k to ensure quality
             score_threshold = 0.2  # Lower threshold to get more candidates
@@ -362,6 +411,101 @@ Rewritten query:"""
             logger.error(f"Error getting top relevant chunks: {e}")
             raise
     
+    def _normalize_speech_address(self, address: str) -> str:
+        """Normalize speech-to-text address formats to standard format"""
+        try:
+            normalized = address.strip()
+            
+            # Handle speech patterns like "36th West, 36th Street" → "36 W 36th St"
+            patterns = [
+                # Pattern: "36th West, 36th Street" or "36th West 36th Street" (preserve ordinal suffix)
+                (r'(\d+)(?:st|nd|rd|th)?\s+(?:West|west),?\s+(\d+)(?:st|nd|rd|th)?\s+(?:Street|street|St|st)', r'\1 W \2th St'),
+                # Pattern: "36th East, 36th Street" 
+                (r'(\d+)(?:st|nd|rd|th)?\s+(?:East|east),?\s+(\d+)(?:st|nd|rd|th)?\s+(?:Street|street|St|st)', r'\1 E \2th St'),
+                # Pattern: "36th North, 36th Street"
+                (r'(\d+)(?:st|nd|rd|th)?\s+(?:North|north),?\s+(\d+)(?:st|nd|rd|th)?\s+(?:Street|street|St|st)', r'\1 N \2th St'),
+                # Pattern: "36th South, 36th Street"
+                (r'(\d+)(?:st|nd|rd|th)?\s+(?:South|south),?\s+(\d+)(?:st|nd|rd|th)?\s+(?:Street|street|St|st)', r'\1 S \2th St'),
+                
+                # Alternative patterns without comma
+                (r'(\d+)\s+(?:West|west)\s+(\d+)(?:st|nd|rd|th)?\s+(?:Street|street|St|st)', r'\1 W \2th St'),
+                (r'(\d+)\s+(?:East|east)\s+(\d+)(?:st|nd|rd|th)?\s+(?:Street|street|St|st)', r'\1 E \2th St'),
+                (r'(\d+)\s+(?:North|north)\s+(\d+)(?:st|nd|rd|th)?\s+(?:Street|street|St|st)', r'\1 N \2th St'),
+                (r'(\d+)\s+(?:South|south)\s+(\d+)(?:st|nd|rd|th)?\s+(?:Street|street|St|st)', r'\1 S \2th St'),
+            ]
+            
+            for pattern, replacement in patterns:
+                match = re.search(pattern, normalized, re.IGNORECASE)
+                if match:
+                    normalized = re.sub(pattern, replacement, normalized, flags=re.IGNORECASE)
+                    break
+            
+            logger.info(f"🔤 Address normalization: '{address}' → '{normalized}'")
+            return normalized
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Address normalization failed: {e}")
+            return address  # Return original if normalization fails
+
+    def _granular_property_search(self, query: str, address: str, floor: str, suite: str, k: int = 3) -> List[Dict[str, Any]]:
+        """Enhanced search for specific floor/suite combinations at an address"""
+        try:
+            logger.info(f"🏢 Granular property search for: '{address}' Floor: '{floor}' Suite: '{suite}'")
+            
+            # Get all results for this address first
+            all_results = self.search_documents(
+                query=address,  # Search for the address
+                limit=50,  # Get more candidates since we'll filter by floor/suite
+                score_threshold=0.05  # Lower threshold to get all possible matches
+            )
+            
+            exact_matches = []
+            floor_matches = []
+            address_matches = []
+            
+            # Normalize search criteria
+            search_floor = floor.upper().strip()
+            search_suite = suite.strip()
+            
+            logger.info(f"🔍 Searching for Floor: '{search_floor}' Suite: '{search_suite}'")
+            
+            for result in all_results:
+                content = result['content']  # Keep original case for extraction
+                
+                # Extract floor and suite from content (case insensitive search)
+                floor_match = re.search(r'floor:\s*([^|]+)', content, re.IGNORECASE)
+                suite_match = re.search(r'suite:\s*([^|]+)', content, re.IGNORECASE)
+                
+                if floor_match and suite_match:
+                    found_floor = floor_match.group(1).strip().upper()
+                    found_suite = suite_match.group(1).strip()
+                    
+                    logger.info(f"📋 Comparing Floor: '{search_floor}' vs '{found_floor}', Suite: '{search_suite}' vs '{found_suite}'")
+                    
+                    # Exact floor AND suite match
+                    if found_floor == search_floor and found_suite == search_suite:
+                        exact_matches.append(result)
+                        logger.info(f"✅ EXACT MATCH: Floor {found_floor}, Suite {found_suite}")
+                    # Floor match only (fallback)
+                    elif found_floor == search_floor:
+                        floor_matches.append(result)
+                        logger.info(f"🟡 Floor match: {found_floor}")
+                    # Address match only (fallback)
+                    else:
+                        address_matches.append(result)
+                
+            # Prioritize exact matches, then floor matches, then address matches
+            combined_results = exact_matches + floor_matches + address_matches
+            
+            logger.info(f"📊 Found {len(exact_matches)} exact, {len(floor_matches)} floor, {len(address_matches)} address matches")
+            
+            return combined_results[:k]
+            
+        except Exception as e:
+            logger.error(f"Error in granular property search: {e}")
+            # Fallback to regular address search
+            return self._hybrid_address_search(query, address, k)
+
     def _hybrid_address_search(self, query: str, address: str, k: int = 3) -> List[Dict[str, Any]]:
         """Hybrid search that prioritizes exact address matches"""
         try:

@@ -1,0 +1,686 @@
+{
+  "summary": {
+    "total_properties": 25,
+    "successful_tests": 25,
+    "success_rate": 100.0,
+    "average_accuracy": 1.0,
+    "failed_tests": 0
+  },
+  "detailed_results": [
+    {
+      "property_id": 200,
+      "address": "247 W 30th St",
+      "floor": "P4",
+      "suite": "4F",
+      "query": "Who are the associates that manage the property on 247 W 30th St, Suite 4F, Floor P4?",
+      "expected_associates": [
+        "Jack Sparrow",
+        "Jon Snow",
+        "Georgie Cooper",
+        "Lando Norris"
+      ],
+      "response": "The property at 247 W 30th St, Suite 4F, Floor P4 is managed by the following associates:\n\n1. Jack Sparrow\n2. Jon Snow\n3. Georgie Cooper\n4. Lando Norris\n\nIf you need further information about this property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 2.9611313343048096,
+      "request_time": 2.9660093784332275,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Jack Sparrow",
+        "Jon Snow",
+        "Georgie Cooper",
+        "Lando Norris"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 201,
+      "address": "50 W 17th St",
+      "floor": "E 10",
+      "suite": "1000",
+      "query": "Who are the associates that manage the property on 50 W 17th St, Suite 1000, Floor E 10?",
+      "expected_associates": [
+        "Davy Jones",
+        "Jaime Lannister",
+        "Missy Cooper",
+        "Sergio Perez"
+      ],
+      "response": "The associates managing the property at 50 W 17th St, Suite 1000, Floor E 10 are:\n\n1. Davy Jones\n2. Jaime Lannister\n3. Missy Cooper\n4. Sergio Perez\n\nIf you need further information about the property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.6110374927520752,
+      "request_time": 1.6141448020935059,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Davy Jones",
+        "Jaime Lannister",
+        "Missy Cooper",
+        "Sergio Perez"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 202,
+      "address": "50 W 17th St",
+      "floor": "E12",
+      "suite": "PH",
+      "query": "Who are the associates that manage the property on 50 W 17th St, Suite PH, Floor E12?",
+      "expected_associates": [
+        "Davy Jones",
+        "Daenerys Targaryen",
+        "Meemaw",
+        "George Russell"
+      ],
+      "response": "The associates managing the property at 50 W 17th St, Suite PH, Floor E12 are:\n\n1. Davy Jones\n2. Daenerys Targaryen\n3. Meemaw\n4. George Russell\n\nIf you need any more information about this property or have other questions, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.9975059032440186,
+      "request_time": 2.0009193420410156,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Davy Jones",
+        "Daenerys Targaryen",
+        "Meemaw",
+        "George Russell"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 203,
+      "address": "7 W 36th St",
+      "floor": "E12",
+      "suite": "1200",
+      "query": "Who are the associates that manage the property on 7 W 36th St, Suite 1200, Floor E12?",
+      "expected_associates": [
+        "Joshamee Gibbs",
+        "Jon Snow",
+        "George Cooper Sr.",
+        "Sergio Perez"
+      ],
+      "response": "The property at 7 W 36th St, Suite 1200, Floor E12 is managed by the following associates:\n\n1. Joshamee Gibbs\n2. Jon Snow\n3. George Cooper Sr.\n4. Sergio Perez\n\nIf you need more information or assistance, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 2.39607310295105,
+      "request_time": 2.399104118347168,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Joshamee Gibbs",
+        "Jon Snow",
+        "George Cooper Sr.",
+        "Sergio Perez"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 204,
+      "address": "8 W 38th St",
+      "floor": "P9",
+      "suite": "901",
+      "query": "Who are the associates that manage the property on 8 W 38th St, Suite 901, Floor P9?",
+      "expected_associates": [
+        "Hector Barbossa",
+        "Arya Stark",
+        "Dr. Sturgis",
+        "Max Verstappen"
+      ],
+      "response": "The associates managing the property at 8 W 38th St, Suite 901, Floor P9 are:\n\n1. Hector Barbossa\n2. Arya Stark\n3. Dr. Sturgis\n4. Max Verstappen\n\nIf you need any more information about this property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.4783601760864258,
+      "request_time": 1.4816334247589111,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Hector Barbossa",
+        "Arya Stark",
+        "Dr. Sturgis",
+        "Max Verstappen"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 205,
+      "address": "8 W 38th St",
+      "floor": "P11",
+      "suite": "1102",
+      "query": "Who are the associates that manage the property on 8 W 38th St, Suite 1102, Floor P11?",
+      "expected_associates": [
+        "Davy Jones",
+        "Tyrion Lannister",
+        "Dr. Linkletter",
+        "Fernando Alonso"
+      ],
+      "response": "The property at 8 W 38th St, Suite 1102, Floor P11, is managed by the following associates:\n\n- Davy Jones\n- Tyrion Lannister\n- Dr. Linkletter\n- Fernando Alonso\n\nIf you need further information about this property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.2790534496307373,
+      "request_time": 1.282508373260498,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Davy Jones",
+        "Tyrion Lannister",
+        "Dr. Linkletter",
+        "Fernando Alonso"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 206,
+      "address": "8 W 38th St",
+      "floor": "P11",
+      "suite": "1103",
+      "query": "Who are the associates that manage the property on 8 W 38th St, Suite 1103, Floor P11?",
+      "expected_associates": [
+        "Tia Dalma",
+        "Jon Snow",
+        "Meemaw",
+        "Max Verstappen"
+      ],
+      "response": "The associates managing the property at 8 W 38th St, Suite 1103, Floor P11 are Tia Dalma, Jon Snow, Meemaw, and Max Verstappen. If you need more information or assistance regarding this property, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.014606237411499,
+      "request_time": 1.0178792476654053,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Tia Dalma",
+        "Jon Snow",
+        "Meemaw",
+        "Max Verstappen"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 207,
+      "address": "8 W 38th St",
+      "floor": "P11",
+      "suite": "1104",
+      "query": "Who are the associates that manage the property on 8 W 38th St, Suite 1104, Floor P11?",
+      "expected_associates": [
+        "Jack Sparrow",
+        "Daenerys Targaryen",
+        "Sheldon Cooper",
+        "Daniel Ricciardo"
+      ],
+      "response": "The associates managing the property at 8 W 38th St, Suite 1104, Floor P11 are:\n\n- Jack Sparrow\n- Daenerys Targaryen\n- Sheldon Cooper\n- Daniel Ricciardo\n\nIf you need further information about this property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.3121812343597412,
+      "request_time": 1.3159561157226562,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Jack Sparrow",
+        "Daenerys Targaryen",
+        "Sheldon Cooper",
+        "Daniel Ricciardo"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 208,
+      "address": "39-41 W 38th St",
+      "floor": "P5",
+      "suite": "5W",
+      "query": "Who are the associates that manage the property on 39-41 W 38th St, Suite 5W, Floor P5?",
+      "expected_associates": [
+        "Tia Dalma",
+        "Jaime Lannister",
+        "Georgie Cooper",
+        "Lewis Hamilton"
+      ],
+      "response": "The associates managing the property at 39-41 W 38th St, Suite 5W, Floor P5 are:\n\n1. Tia Dalma\n2. Jaime Lannister\n3. Georgie Cooper\n4. Lewis Hamilton\n\nIf you need more information about this property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.575286865234375,
+      "request_time": 1.5780243873596191,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Tia Dalma",
+        "Jaime Lannister",
+        "Georgie Cooper",
+        "Lewis Hamilton"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 209,
+      "address": "39-41 W 38th St",
+      "floor": "P8",
+      "suite": "8W",
+      "query": "Who are the associates that manage the property on 39-41 W 38th St, Suite 8W, Floor P8?",
+      "expected_associates": [
+        "Bootstrap Bill",
+        "Bran Stark",
+        "Brenda Sparks",
+        "Charles Leclerc"
+      ],
+      "response": "The property at 39-41 W 38th St, Suite 8W, Floor P8 is managed by the following associates:\n\n1. Bootstrap Bill\n2. Bran Stark\n3. Brenda Sparks\n4. Charles Leclerc\n\nIf you need more information about this property or their services, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.3241751194000244,
+      "request_time": 1.3274483680725098,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Bootstrap Bill",
+        "Bran Stark",
+        "Brenda Sparks",
+        "Charles Leclerc"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 210,
+      "address": "42 W 38th St",
+      "floor": "P6",
+      "suite": "604",
+      "query": "Who are the associates that manage the property on 42 W 38th St, Suite 604, Floor P6?",
+      "expected_associates": [
+        "Cutler Beckett",
+        "Tyrion Lannister",
+        "Dr. Linkletter",
+        "Daniel Ricciardo"
+      ],
+      "response": "The associates managing the property at 42 W 38th St, Suite 604, Floor P6 are:\n\n1. Cutler Beckett\n2. Tyrion Lannister\n3. Dr. Linkletter\n4. Daniel Ricciardo\n\nIf you need more information about the property or their services, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.4079694747924805,
+      "request_time": 1.4109704494476318,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Cutler Beckett",
+        "Tyrion Lannister",
+        "Dr. Linkletter",
+        "Daniel Ricciardo"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 211,
+      "address": "42 W 38th St",
+      "floor": "P8",
+      "suite": "800",
+      "query": "Who are the associates that manage the property on 42 W 38th St, Suite 800, Floor P8?",
+      "expected_associates": [
+        "James Norrington",
+        "Cersei Lannister",
+        "Brenda Sparks",
+        "Lando Norris"
+      ],
+      "response": "The associates managing the property at 42 W 38th St, Suite 800, Floor P8 are:\n\n1. James Norrington\n2. Cersei Lannister\n3. Brenda Sparks\n4. Lando Norris\n\nIf you need more information about this property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.1412889957427979,
+      "request_time": 1.1441371440887451,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "James Norrington",
+        "Cersei Lannister",
+        "Brenda Sparks",
+        "Lando Norris"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 212,
+      "address": "42 W 38th St",
+      "floor": "P10",
+      "suite": "1004",
+      "query": "Who are the associates that manage the property on 42 W 38th St, Suite 1004, Floor P10?",
+      "expected_associates": [
+        "Will Turner",
+        "Jaime Lannister",
+        "Missy Cooper",
+        "Lewis Hamilton"
+      ],
+      "response": "The associates managing the property at 42 W 38th St, Suite 1004, Floor P10 are:\n\n1. Will Turner\n2. Jaime Lannister\n3. Missy Cooper\n4. Lewis Hamilton\n\nIf you need more information about the property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.184058666229248,
+      "request_time": 1.18760347366333,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Will Turner",
+        "Jaime Lannister",
+        "Missy Cooper",
+        "Lewis Hamilton"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 213,
+      "address": "42 W 38th St",
+      "floor": "P12",
+      "suite": "1200",
+      "query": "Who are the associates that manage the property on 42 W 38th St, Suite 1200, Floor P12?",
+      "expected_associates": [
+        "Bootstrap Bill",
+        "The Hound",
+        "Dr. Linkletter",
+        "Lewis Hamilton"
+      ],
+      "response": "The associates managing the property at 42 W 38th St, Suite 1200, Floor P12 are:\n\n1. Bootstrap Bill\n2. The Hound\n3. Dr. Linkletter\n4. Lewis Hamilton\n\nIf you need further assistance or information about this property, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.163670301437378,
+      "request_time": 1.1662507057189941,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Bootstrap Bill",
+        "The Hound",
+        "Dr. Linkletter",
+        "Lewis Hamilton"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 214,
+      "address": "6 W 48th St",
+      "floor": "E4",
+      "suite": "400",
+      "query": "Who are the associates that manage the property on 6 W 48th St, Suite 400, Floor E4?",
+      "expected_associates": [
+        "Elizabeth Swann",
+        "Bran Stark",
+        "Mary Cooper",
+        "Fernando Alonso"
+      ],
+      "response": "The associates managing the property at 6 W 48th St, Suite 400, Floor E4 are:\n\n1. Elizabeth Swann\n2. Bran Stark\n3. Mary Cooper\n4. Fernando Alonso\n\nIf you need more information about this property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.3076248168945312,
+      "request_time": 1.310276985168457,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Elizabeth Swann",
+        "Bran Stark",
+        "Mary Cooper",
+        "Fernando Alonso"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 215,
+      "address": "6 W 48th St",
+      "floor": "E5",
+      "suite": "500",
+      "query": "Who are the associates that manage the property on 6 W 48th St, Suite 500, Floor E5?",
+      "expected_associates": [
+        "Cutler Beckett",
+        "Jorah Mormont",
+        "Missy Cooper",
+        "Daniel Ricciardo"
+      ],
+      "response": "The property at 6 W 48th St, Suite 500, Floor E5 is managed by the following associates:\n\n1. Cutler Beckett\n2. Jorah Mormont\n3. Missy Cooper\n4. Daniel Ricciardo\n\nIf you need any more information about this property or its management, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.2607605457305908,
+      "request_time": 1.263315200805664,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Cutler Beckett",
+        "Jorah Mormont",
+        "Missy Cooper",
+        "Daniel Ricciardo"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 216,
+      "address": "6 W 48th St",
+      "floor": "E6",
+      "suite": "600",
+      "query": "Who are the associates that manage the property on 6 W 48th St, Suite 600, Floor E6?",
+      "expected_associates": [
+        "Hector Barbossa",
+        "Cersei Lannister",
+        "Sheldon Cooper",
+        "Fernando Alonso"
+      ],
+      "response": "The property at 6 W 48th St, Suite 600, Floor E6 is managed by the following associates:\n\n1. Hector Barbossa\n2. Cersei Lannister\n3. Sheldon Cooper\n4. Fernando Alonso\n\nIf you need more information about this property or its management, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.1491279602050781,
+      "request_time": 1.1518375873565674,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Hector Barbossa",
+        "Cersei Lannister",
+        "Sheldon Cooper",
+        "Fernando Alonso"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 217,
+      "address": "144 W 37th St",
+      "floor": "P4",
+      "suite": "400",
+      "query": "Who are the associates that manage the property on 144 W 37th St, Suite 400, Floor P4?",
+      "expected_associates": [
+        "Davy Jones",
+        "Jon Snow",
+        "Meemaw",
+        "George Russell"
+      ],
+      "response": "The associates managing the property at 144 W 37th St, Suite 400, Floor P4 are:\n\n1. Davy Jones\n2. Jon Snow\n3. Meemaw\n4. George Russell\n\nIf you need more information about this property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.2111937999725342,
+      "request_time": 1.2149081230163574,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Davy Jones",
+        "Jon Snow",
+        "Meemaw",
+        "George Russell"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 218,
+      "address": "144 W 37th St",
+      "floor": "P5",
+      "suite": "500",
+      "query": "Who are the associates that manage the property on 144 W 37th St, Suite 500, Floor P5?",
+      "expected_associates": [
+        "Elizabeth Swann",
+        "Daenerys Targaryen",
+        "Mary Cooper",
+        "Oscar Piastri"
+      ],
+      "response": "The associates managing the property at 144 W 37th St, Suite 500, Floor P5 are:\n\n1. Elizabeth Swann\n2. Daenerys Targaryen\n3. Mary Cooper\n4. Oscar Piastri\n\nIf you need further information about this property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.2347571849822998,
+      "request_time": 1.237534999847412,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Elizabeth Swann",
+        "Daenerys Targaryen",
+        "Mary Cooper",
+        "Oscar Piastri"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 219,
+      "address": "40 W 38th St",
+      "floor": "P11",
+      "suite": "1008",
+      "query": "Who are the associates that manage the property on 40 W 38th St, Suite 1008, Floor P11?",
+      "expected_associates": [
+        "Davy Jones",
+        "Daenerys Targaryen",
+        "Missy Cooper",
+        "Sergio Perez"
+      ],
+      "response": "The associates managing the property at 40 W 38th St, Suite 1008, Floor P11 are:\n\n1. Davy Jones\n2. Daenerys Targaryen\n3. Missy Cooper\n4. Sergio Perez\n\nIf you need any more information about this property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 2.1670916080474854,
+      "request_time": 2.170109510421753,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Davy Jones",
+        "Daenerys Targaryen",
+        "Missy Cooper",
+        "Sergio Perez"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 220,
+      "address": "60 W 45th S",
+      "floor": "P11",
+      "suite": "788",
+      "query": "Who are the associates that manage the property on 60 W 45th S, Suite 788, Floor P11?",
+      "expected_associates": [
+        "Hector Barbossa",
+        "Jorah Mormont",
+        "Dr. Sturgis",
+        "Oscar Piastri"
+      ],
+      "response": "The associates managing the property at 60 W 45th S, Suite 788, Floor P11 are:\n\n1. Hector Barbossa\n2. Jorah Mormont\n3. Dr. Sturgis\n4. Oscar Piastri\n\nIf you need more information about the property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.458120346069336,
+      "request_time": 1.4608232975006104,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Hector Barbossa",
+        "Jorah Mormont",
+        "Dr. Sturgis",
+        "Oscar Piastri"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 221,
+      "address": "412 Broadway",
+      "floor": "P5",
+      "suite": "792",
+      "query": "Who are the associates that manage the property on 412 Broadway, Suite 792, Floor P5?",
+      "expected_associates": [
+        "Davy Jones",
+        "Jon Snow",
+        "George Cooper Sr.",
+        "Daniel Ricciardo"
+      ],
+      "response": "The associates managing the property at 412 Broadway, Suite 792, Floor P5 are:\n\n1. Davy Jones\n2. Jon Snow\n3. George Cooper Sr.\n4. Daniel Ricciardo\n\nIf you need more information about this property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.3625662326812744,
+      "request_time": 1.3661284446716309,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Davy Jones",
+        "Jon Snow",
+        "George Cooper Sr.",
+        "Daniel Ricciardo"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 222,
+      "address": "135 W 52nd St",
+      "floor": "P8",
+      "suite": "1189",
+      "query": "Who are the associates that manage the property on 135 W 52nd St, Suite 1189, Floor P8?",
+      "expected_associates": [
+        "Davy Jones",
+        "Cersei Lannister",
+        "Sheldon Cooper",
+        "Fernando Alonso"
+      ],
+      "response": "The associates managing the property at 135 W 52nd St, Suite 1189, Floor P8 are:\n\n1. Davy Jones\n2. Cersei Lannister\n3. Sheldon Cooper\n4. Fernando Alonso\n\nIf you need more information about the property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.0486838817596436,
+      "request_time": 1.0512888431549072,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Davy Jones",
+        "Cersei Lannister",
+        "Sheldon Cooper",
+        "Fernando Alonso"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 223,
+      "address": "171 Elizabeth St",
+      "floor": "P6",
+      "suite": "768",
+      "query": "Who are the associates that manage the property on 171 Elizabeth St, Suite 768, Floor P6?",
+      "expected_associates": [
+        "Tia Dalma",
+        "Arya Stark",
+        "Sheldon Cooper",
+        "Oscar Piastri"
+      ],
+      "response": "The associates managing the property at 171 Elizabeth St, Suite 768, Floor P6 are:\n\n1. Tia Dalma\n2. Arya Stark\n3. Sheldon Cooper\n4. Oscar Piastri\n\nIf you need any more information about this property or anything else, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.3541269302368164,
+      "request_time": 1.357229232788086,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Tia Dalma",
+        "Arya Stark",
+        "Sheldon Cooper",
+        "Oscar Piastri"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    },
+    {
+      "property_id": 224,
+      "address": "84 Mulberry St",
+      "floor": "P8",
+      "suite": "1118",
+      "query": "Who are the associates that manage the property on 84 Mulberry St, Suite 1118, Floor P8?",
+      "expected_associates": [
+        "Tia Dalma",
+        "Arya Stark",
+        "Dr. Linkletter",
+        "Charles Leclerc"
+      ],
+      "response": "The associates managing the property at 84 Mulberry St, Suite 1118, Floor P8 are:\n\n1. Tia Dalma\n2. Arya Stark\n3. Dr. Linkletter\n4. Charles Leclerc\n\nIf you need any further information about this property or the associates, feel free to ask!",
+      "rag_used": true,
+      "processing_time": 1.2903854846954346,
+      "request_time": 1.2937133312225342,
+      "success": true,
+      "accuracy": 1.0,
+      "found_associates": [
+        "Tia Dalma",
+        "Arya Stark",
+        "Dr. Linkletter",
+        "Charles Leclerc"
+      ],
+      "missing_associates": [],
+      "total_expected": 4
+    }
+  ]
+}
