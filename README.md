@@ -68,10 +68,14 @@ ensures RAG functionality works immediately. You can still upload additional doc
 If you'd like to prevent the automatic indexing of the `HackathonInternalKnowledgeBase.csv`, feel
 free to remove it BEFORE running python main.py
 
-5. Run the Flask frontend (in a new terminal):
+5. (Optional) If you'd like to interact with the API with a basic frontend
+
+Run the Flask frontend (in a new terminal):
 ```bash
 python frontend.py
 ```
+
+![Frontend Screenshot](Frontend.png)
 
 The API will be available at `http://localhost:8000`
 The Web UI will be available at `http://localhost:5000`
