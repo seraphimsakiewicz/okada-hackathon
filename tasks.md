@@ -61,21 +61,22 @@
    - [x] Verified all 455 documents are properly indexed and searchable
 
 ### Phase 3: Core API Endpoints (3-4 hours)
-5. **Speech-to-Text endpoint**
+5. **Speech-to-Text endpoint** ✅
    
    **Implementation Details:**
-   - [ ] Create `/transcribe` endpoint that accepts audio file uploads (WAV, MP3, M4A)
-   - [ ] Integrate OpenAI Whisper API for speech-to-text conversion
-   - [ ] Add timing measurement (start/end timestamps)
-   - [ ] Handle audio file validation and temporary storage
-   - [ ] Return JSON response with transcribed text and processing duration
+   - [x] Create `/transcribe` endpoint that accepts audio file uploads (WAV, MP3, M4A, FLAC, WEBM, MP4)
+   - [x] Integrate OpenAI Whisper API for speech-to-text conversion
+   - [x] Add timing measurement (start/end timestamps)
+   - [x] Handle audio file validation and temporary storage (25MB size limit)
+   - [x] Return JSON response with transcribed text and processing duration
+   - [x] Added Pydantic response model for proper API documentation
    
    **Manual Testing:**
-   - [ ] Record audio file using phone/computer (say "Hello, what properties are available?")
-   - [ ] Test upload: `curl -X POST -F "audio=@test_audio.wav" http://localhost:8000/transcribe`
-   - [ ] Use Swagger UI at /docs to upload audio file through browser
-   - [ ] Verify response includes both transcription text and timing in seconds
-   - [ ] Test with different audio formats and lengths
+   - [x] Record audio file using phone/computer (say "Hello, what properties are available?")
+   - [x] Test upload: `curl -X POST -F "audio=@test_audio.wav" http://localhost:8000/transcribe`
+   - [x] Use Swagger UI at /docs to upload audio file through browser
+   - [x] Verify response includes both transcription text and timing in seconds
+   - [x] Test with different audio formats and lengths
 
 6. **Chat functionality**
    

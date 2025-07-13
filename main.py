@@ -9,6 +9,7 @@ import os
 import tempfile
 import time
 from pathlib import Path
+from typing import Optional
 from src.clients import api_clients
 from src.services.document_processor import DocumentProcessor
 from src.services.rag_service import RAGService
@@ -32,6 +33,28 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Pydantic models
+class TranscribeResponse(BaseModel):
+    text: str
+    transcription_time: float
+    filename: str
+
+class SearchRequest(BaseModel):
+    query: str
+    limit: int = 5
+    score_threshold: float = 0.3
+
+class TopKRequest(BaseModel):
+    query: str
+    k: int = 3
+
+class MetadataSearchRequest(BaseModel):
+    query: str
+    source_contains: str = None
+    document_type: str = None
+    last_n_days: int = None
+    limit: int = 5
 
 # Initialize services
 doc_processor = DocumentProcessor()
@@ -112,9 +135,67 @@ async def health_check():
             }
         }
 
-@app.post("/transcribe")
-async def transcribe_audio():
-    return {"message": "Transcribe endpoint - TODO"}
+@app.post("/transcribe", response_model=TranscribeResponse)
+async def transcribe_audio(audio: UploadFile = File(...)):
+    """Transcribe audio file to text using OpenAI Whisper API"""
+    start_time = time.time()
+    
+    try:
+        # Validate file type
+        file_ext = Path(audio.filename).suffix.lower()
+        supported_formats = {'.wav', '.mp3', '.m4a', '.flac', '.webm', '.mp4'}
+        
+        if file_ext not in supported_formats:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Unsupported audio format: {file_ext}. Supported: {', '.join(supported_formats)}"
+            )
+        
+        # Validate file size (OpenAI Whisper has 25MB limit)
+        audio_content = await audio.read()
+        if len(audio_content) > 25 * 1024 * 1024:  # 25MB
+            raise HTTPException(
+                status_code=400,
+                detail="Audio file too large. Maximum size is 25MB."
+            )
+        
+        # Create temporary file for audio processing
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as temp_file:
+            temp_file.write(audio_content)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Transcribe using OpenAI Whisper
+            transcription_start = time.time()
+            
+            with open(temp_file_path, "rb") as audio_file:
+                transcript = api_clients.openai_client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=audio_file,
+                    response_format="text"
+                )
+            
+            transcription_time = time.time() - transcription_start
+            total_time = time.time() - start_time
+            
+            logger.info(f"Transcribed {audio.filename} in {transcription_time:.2f}s")
+            
+            return TranscribeResponse(
+                text=transcript,
+                transcription_time=transcription_time,
+                filename=audio.filename
+            )
+            
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+                
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error transcribing audio: {e}")
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
 
 @app.post("/chat")
 async def chat():
@@ -201,11 +282,6 @@ async def upload_documents(file: UploadFile = File(...)):
         logger.error(f"Error uploading document: {e}")
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
-class SearchRequest(BaseModel):
-    query: str
-    limit: int = 5
-    score_threshold: float = 0.3
-
 @app.post("/search")
 async def search_documents(request: SearchRequest):
     """Search for relevant documents using RAG system"""
@@ -238,10 +314,6 @@ async def get_collection_info():
     except Exception as e:
         logger.error(f"Error getting collection info: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get collection info: {str(e)}")
-
-class TopKRequest(BaseModel):
-    query: str
-    k: int = 3
 
 @app.post("/search/top_k")
 async def get_top_relevant_chunks(request: TopKRequest):
@@ -285,13 +357,6 @@ async def get_contextualized_data(request: TopKRequest):
     except Exception as e:
         logger.error(f"Error getting contextualized data: {e}")
         raise HTTPException(status_code=500, detail=f"Context generation failed: {str(e)}")
-
-class MetadataSearchRequest(BaseModel):
-    query: str
-    source_contains: str = None
-    document_type: str = None
-    last_n_days: int = None
-    limit: int = 5
 
 @app.post("/search/metadata")
 async def search_by_metadata(request: MetadataSearchRequest):
