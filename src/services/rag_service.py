@@ -236,6 +236,16 @@ class RAGService:
             # Ensure k is within reasonable bounds (3-5 for optimal context)
             k = max(3, min(k, 5))
             
+            # Check if this is an address-specific query
+            import re
+            address_pattern = r'\d+\s+[NESW]\s+\d+\w*\s+[Ss]t(?:reet)?'
+            address_match = re.search(address_pattern, query, re.IGNORECASE)
+            
+            if address_match:
+                logger.info(f"🏠 Detected address query: {address_match.group()}")
+                # Use hybrid search for address queries
+                return self._hybrid_address_search(query, address_match.group(), k)
+            
             # Use moderate score threshold for top-k to ensure quality
             score_threshold = 0.2  # Lower threshold to get more candidates
             
@@ -274,6 +284,54 @@ class RAGService:
         except Exception as e:
             logger.error(f"Error getting top relevant chunks: {e}")
             raise
+    
+    def _hybrid_address_search(self, query: str, address: str, k: int = 3) -> List[Dict[str, Any]]:
+        """Hybrid search that prioritizes exact address matches"""
+        try:
+            logger.info(f"🔍 Hybrid address search for: '{address}'")
+            
+            # Get semantic search results first
+            all_results = self.search_documents(
+                query=address,  # Search for the address directly, not the full query
+                limit=20,  # Get more candidates
+                score_threshold=0.1
+            )
+            
+            exact_matches = []
+            partial_matches = []
+            
+            # Normalize the search address for comparison (handle different formats)
+            search_address = address.strip().lower().replace("street", "st").replace(".", "")
+            logger.info(f"🏠 Normalized search address: '{search_address}'")
+            
+            for result in all_results:
+                content = result['content'].lower()
+                
+                # Extract the property address from content using regex
+                import re
+                address_in_content = re.search(r'property address:\s*([^|]+)', content)
+                if address_in_content:
+                    found_address = address_in_content.group(1).strip().lower().replace("street", "st").replace(".", "")
+                    logger.info(f"📍 Comparing '{search_address}' with '{found_address}'")
+                    
+                    if search_address == found_address:
+                        exact_matches.append(result)
+                        logger.info(f"✅ EXACT match found: {found_address}")
+                    elif search_address in found_address or found_address in search_address:
+                        partial_matches.append(result)
+                        logger.info(f"🟡 Partial match: {found_address}")
+            
+            # Prioritize exact matches, then partial matches, then semantic matches
+            remaining_semantic = [r for r in all_results if r not in exact_matches and r not in partial_matches]
+            combined_results = exact_matches + partial_matches + remaining_semantic
+            
+            logger.info(f"📊 Found {len(exact_matches)} exact, {len(partial_matches)} partial, {len(remaining_semantic)} semantic matches")
+            
+            return combined_results[:k]
+            
+        except Exception as e:
+            logger.error(f"Error in hybrid address search: {e}")
+            return self.search_documents(query=query, limit=k, score_threshold=0.2)
     
     def format_context_for_llm(self, retrieved_docs: List[Dict[str, Any]], query: str) -> str:
         """Format retrieved documents into context string optimized for LLM injection"""

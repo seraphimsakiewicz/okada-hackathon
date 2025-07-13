@@ -78,49 +78,60 @@
    - [x] Verify response includes both transcription text and timing in seconds
    - [x] Test with different audio formats and lengths
 
-6. **Chat functionality**
+6. **Chat functionality** ✅
    
    **Implementation Details:**
-   - [ ] Create `/chat` endpoint accepting conversation_id, message, and optional context
-   - [ ] Implement conversation memory using in-memory dictionary (conversation_id -> message history)
-   - [ ] Integrate RAG system to retrieve relevant context for each message
-   - [ ] Setup OpenAI GPT-4o Mini API calls with system prompts and conversation history
-   - [ ] Format response with RAG context injection and conversation flow
+   - [x] Create `/chat` endpoint accepting conversation_id, message, and optional context
+   - [x] Implement conversation memory using in-memory dictionary (conversation_id -> message history)
+   - [x] Integrate RAG system to retrieve relevant context for each message (auto-retrieves top 3 relevant chunks)
+   - [x] Setup OpenAI GPT-4o Mini API calls with system prompts and conversation history
+   - [x] Format response with RAG context injection and conversation flow
+   - [x] Added specialized real estate assistant system prompt
+   - [x] Conversation history management (keeps last 10 messages)
+   - [x] Timing measurement for processing and LLM calls
+   - [x] Pydantic models for request/response with RAG metadata
    
    **Manual Testing:**
-   - [ ] Test basic chat: `curl -X POST -H "Content-Type: application/json" -d '{"conversation_id": "test1", "message": "Hello"}' http://localhost:8000/chat`
-   - [ ] Test with real estate query: `curl -X POST -H "Content-Type: application/json" -d '{"conversation_id": "test1", "message": "What properties are available for under $500k?"}' http://localhost:8000/chat`
-   - [ ] Verify conversation memory by sending follow-up questions in same conversation_id
-   - [ ] Check that responses include relevant property information from uploaded CSV
+   - [x] Test basic chat: `curl -X POST -H "Content-Type: application/json" -d '{"conversation_id": "test1", "message": "Hello"}' http://localhost:8000/chat`
+   - [x] Test with real estate query: `curl -X POST -H "Content-Type: application/json" -d '{"conversation_id": "test1", "message": "Who are the associates that manage the property on 36 W 36th street?"}' http://localhost:8000/chat`
+   - [x] Verify conversation memory by sending follow-up questions in same conversation_id
+   - [x] Check that responses include relevant property information from uploaded CSV
+   - [x] Hybrid address search implemented for accurate property matching
+   
+   **Known Limitation:**
+   - [ ] **Nice-to-have**: Fix follow-up queries (e.g., "What is the rent for that property?" → "What is the rent for 36 W 36th St?")
 
 7. **Text-to-Speech endpoint**
    
    **Implementation Details:**
-   - [ ] Create `/speak` endpoint that accepts text input
-   - [ ] Integrate OpenAI TTS API with voice selection (alloy, echo, fable, onyx, nova, shimmer)
-   - [ ] Generate audio file and save to /audio_output directory
-   - [ ] Add timing measurement for TTS generation
-   - [ ] Return audio file path/URL and processing duration
+   - [x] Create `/speak` endpoint that accepts text input
+   - [x] Integrate OpenAI TTS API with voice selection (alloy, echo, fable, onyx, nova, shimmer)
+   - [x] Generate audio file and save to /audio_output directory
+   - [x] Add timing measurement for TTS generation
+   - [x] Return audio file path/URL and processing duration
    
    **Manual Testing:**
-   - [ ] Test TTS: `curl -X POST -H "Content-Type: application/json" -d '{"text": "Hello, I found 3 properties matching your criteria"}' http://localhost:8000/speak`
-   - [ ] Download and play the generated audio file
-   - [ ] Test with longer text responses from the chat endpoint
-   - [ ] Verify timing metrics are accurate and reasonable
+   - [x] Test TTS: `curl -X POST -H "Content-Type: application/json" -d '{"text": "Hello, I found 3 properties matching your criteria"}' http://localhost:8000/speak`
+   - [x] Download and play the generated audio file
+   - [x] Test with longer text responses from the chat endpoint
+   - [x] Verify timing metrics are accurate and reasonable
 
-8. **End-to-end pipeline**
+8. **End-to-end pipeline** ✅
    
    **Implementation Details:**
-   - [ ] Create `/converse` endpoint combining transcribe → chat → speak pipeline
-   - [ ] Accept audio upload, process through all three stages
-   - [ ] Maintain conversation state throughout the pipeline
-   - [ ] Return final audio response with timing breakdown for each stage
-   - [ ] Implement `/reset` endpoint to clear conversation memory for specific conversation_id
+   - [x] Create `/converse` endpoint combining transcribe → chat → speak pipeline
+   - [x] Accept audio upload, process through all three stages (with multipart form support)
+   - [x] Maintain conversation state throughout the pipeline
+   - [x] Return final audio response with timing breakdown for each stage
+   - [x] Implement `/reset` endpoint to clear conversation memory for specific conversation_id
+   - [x] Added voice and speed parameters for TTS customization
+   - [x] Full error handling and validation for each pipeline stage
+   - [x] Comprehensive logging with stage-by-stage timing
    
    **Manual Testing:**
-   - [ ] Record question: "What properties are available in downtown area?"
-   - [ ] Test full pipeline: `curl -X POST -F "audio=@question.wav" -F "conversation_id=test1" http://localhost:8000/converse`
-   - [ ] Verify you receive audio response with property information
+   - [x] Record question: "What properties are available in downtown area?"
+   - [x] Test full pipeline: `curl -X POST -F "audio=@question.wav" -F "conversation_id=test1" http://localhost:8000/converse`
+   - [x] Verify you receive audio response with property information
    - [ ] Test conversation continuity with follow-up audio questions
    - [ ] Test reset: `curl -X POST -H "Content-Type: application/json" -d '{"conversation_id": "test1"}' http://localhost:8000/reset`
 

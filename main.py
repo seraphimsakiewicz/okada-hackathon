@@ -29,6 +29,7 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static/audio", StaticFiles(directory="audio_output"), name="audio")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -39,6 +40,44 @@ class TranscribeResponse(BaseModel):
     text: str
     transcription_time: float
     filename: str
+
+class ChatRequest(BaseModel):
+    conversation_id: str
+    message: str
+    context: Optional[str] = None
+
+class ChatResponse(BaseModel):
+    response: str
+    conversation_id: str
+    processing_time: float
+    rag_context_used: bool
+    rag_sources: Optional[list] = None
+
+class TTSRequest(BaseModel):
+    text: str
+    voice: str = "alloy"  # Default voice
+    speed: float = 1.0    # Speech speed (0.25 to 4.0)
+
+class TTSResponse(BaseModel):
+    audio_file_path: str
+    audio_url: str
+    generation_time: float
+    text_length: int
+    voice_used: str
+    file_size_bytes: int
+
+class ConverseResponse(BaseModel):
+    transcribed_text: str
+    chat_response: str
+    audio_file_path: str
+    audio_url: str
+    conversation_id: str
+    timing: dict  # Contains breakdown of each stage
+    rag_context_used: bool
+    rag_sources: Optional[list] = None
+
+class ResetRequest(BaseModel):
+    conversation_id: str
 
 class SearchRequest(BaseModel):
     query: str
@@ -59,6 +98,9 @@ class MetadataSearchRequest(BaseModel):
 # Initialize services
 doc_processor = DocumentProcessor()
 rag_service = RAGService()
+
+# In-memory conversation storage
+conversations: dict = {}
 
 @app.on_event("startup")
 async def startup_event():
@@ -197,21 +239,380 @@ async def transcribe_audio(audio: UploadFile = File(...)):
         logger.error(f"Error transcribing audio: {e}")
         raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
 
-@app.post("/chat")
-async def chat():
-    return {"message": "Chat endpoint - TODO"}
+@app.post("/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest):
+    """Chat with LLM enhanced by RAG system"""
+    start_time = time.time()
+    logger.info(f"🚀 Chat request started - conversation_id: {request.conversation_id}, message: '{request.message[:50]}...'")
+    
+    try:
+        # Retrieve relevant context from RAG system if no context provided
+        rag_context_used = False
+        rag_sources = []
+        context_text = request.context
+        
+        logger.info(f"📝 Context provided: {bool(request.context)}")
+        
+        if not context_text:
+            try:
+                logger.info("🔍 Starting RAG retrieval...")
+                # Get relevant context from RAG system
+                rag_start = time.time()
+                
+                # Get relevant context from RAG system
+                try:
+                    rag_results = rag_service.get_contextualized_response_data(
+                        query=request.message,
+                        k=3
+                    )
+                    rag_time = time.time() - rag_start
+                    logger.info(f"✅ RAG retrieval completed in {rag_time:.2f}s")
+                except Exception as rag_error:
+                    rag_time = time.time() - rag_start
+                    logger.error(f"❌ RAG retrieval failed after {rag_time:.2f}s: {rag_error}")
+                    rag_results = None
+                
+                if rag_results and rag_results.get("formatted_context"):
+                    context_text = rag_results["formatted_context"]
+                    # Deduplicate sources
+                    all_sources = [doc.get("source", "unknown") for doc in rag_results.get("retrieved_documents", [])]
+                    rag_sources = list(set(all_sources))  # Remove duplicates
+                    rag_context_used = True
+                    logger.info(f"📚 RAG context retrieved: {len(context_text)} chars, sources: {rag_sources}")
+                else:
+                    if rag_results is None:
+                        logger.warning("⚠️ RAG retrieval failed, proceeding without context")
+                    else:
+                        logger.warning(f"⚠️ No RAG context found in results: {rag_results.keys() if rag_results else 'None'}")
+                    
+            except Exception as e:
+                logger.error(f"❌ Failed to retrieve RAG context: {e}")
+        
+        # Get or create conversation history
+        logger.info("💾 Managing conversation history...")
+        if request.conversation_id not in conversations:
+            conversations[request.conversation_id] = []
+            logger.info(f"🆕 Created new conversation: {request.conversation_id}")
+        
+        conversation_history = conversations[request.conversation_id]
+        logger.info(f"📜 Conversation history length: {len(conversation_history)} messages")
+        
+        # Build messages for OpenAI
+        logger.info("🔧 Building OpenAI messages...")
+        messages = []
+        
+        # System prompt
+        system_prompt = """You are a helpful real estate assistant AI. You have access to a comprehensive database of property listings, broker information, and real estate market data.
 
-@app.post("/speak")
-async def text_to_speech():
-    return {"message": "Speak endpoint - TODO"}
+When users ask about properties, provide detailed, accurate information based on the context provided. If you don't have specific information, say so clearly.
 
-@app.post("/converse")
-async def converse():
-    return {"message": "Converse endpoint - TODO"}
+IMPORTANT: When users ask about a specific address, ONLY use information for that EXACT address. Do not confuse similar addresses (e.g., "36 W 36th St" vs "7 W 36th St" are completely different properties).
+
+Be conversational, helpful, and professional. Focus on:
+- Property details (price, location, features, etc.)
+- Market insights and trends  
+- Broker and agent information
+- Helpful real estate advice
+
+Always be truthful about what information you have access to and ensure address accuracy."""
+
+        if context_text:
+            system_prompt += f"\n\nRelevant context from property database:\n{context_text}"
+            logger.info(f"🔗 Added RAG context to system prompt ({len(context_text)} chars)")
+            logger.info(f"📄 Context preview: {context_text[:500]}...")
+        
+        messages.append({"role": "system", "content": system_prompt})
+        
+        # Add conversation history
+        for msg in conversation_history:
+            messages.append(msg)
+        logger.info(f"📚 Added {len(conversation_history)} history messages")
+        
+        # Add current user message
+        user_message = {"role": "user", "content": request.message}
+        messages.append(user_message)
+        logger.info(f"💬 Total messages for OpenAI: {len(messages)}")
+        
+        # Call OpenAI GPT-4o Mini
+        logger.info("🤖 Starting OpenAI API call...")
+        llm_start = time.time()
+        try:
+            response = api_clients.openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                max_tokens=1000,
+                temperature=0.7,
+                timeout=30  # Add 30 second timeout
+            )
+            llm_time = time.time() - llm_start
+            logger.info(f"✅ OpenAI API call completed in {llm_time:.2f}s")
+            
+            assistant_response = response.choices[0].message.content
+            logger.info(f"📝 Response generated: {len(assistant_response)} characters")
+            
+        except Exception as e:
+            logger.error(f"❌ OpenAI API call failed after {time.time() - llm_start:.2f}s: {e}")
+            raise
+        
+        # Update conversation history
+        logger.info("💾 Updating conversation history...")
+        conversation_history.append(user_message)
+        conversation_history.append({"role": "assistant", "content": assistant_response})
+        
+        # Keep conversation history manageable (last 10 messages)
+        if len(conversation_history) > 10:
+            conversation_history = conversation_history[-10:]
+            conversations[request.conversation_id] = conversation_history
+            logger.info("🧹 Trimmed conversation history to last 10 messages")
+        
+        total_time = time.time() - start_time
+        
+        logger.info(f"🎉 Chat response generated in {total_time:.2f}s (LLM: {llm_time:.2f}s)")
+        
+        return ChatResponse(
+            response=assistant_response,
+            conversation_id=request.conversation_id,
+            processing_time=total_time,
+            rag_context_used=rag_context_used,
+            rag_sources=rag_sources if rag_sources else None
+        )
+        
+    except Exception as e:
+        total_error_time = time.time() - start_time
+        logger.error(f"💥 Chat endpoint failed after {total_error_time:.2f}s: {e}")
+        raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
+
+@app.post("/speak", response_model=TTSResponse)
+async def text_to_speech(request: TTSRequest):
+    """Convert text to speech using OpenAI TTS API"""
+    start_time = time.time()
+    
+    try:
+        # Validate voice selection
+        valid_voices = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+        if request.voice not in valid_voices:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid voice '{request.voice}'. Valid options: {', '.join(valid_voices)}"
+            )
+        
+        # Validate speed
+        if not (0.25 <= request.speed <= 4.0):
+            raise HTTPException(
+                status_code=400,
+                detail="Speed must be between 0.25 and 4.0"
+            )
+        
+        # Validate text length (OpenAI TTS has a 4096 character limit)
+        if len(request.text) > 4096:
+            raise HTTPException(
+                status_code=400,
+                detail="Text too long. Maximum 4096 characters allowed."
+            )
+        
+        if len(request.text.strip()) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Text cannot be empty"
+            )
+        
+        # Create audio_output directory if it doesn't exist
+        audio_dir = Path("audio_output")
+        audio_dir.mkdir(exist_ok=True)
+        
+        # Generate unique filename with timestamp
+        timestamp = int(time.time() * 1000)  # milliseconds for uniqueness
+        filename = f"tts_{timestamp}_{request.voice}.mp3"
+        file_path = audio_dir / filename
+        
+        logger.info(f"🔊 Generating TTS: voice={request.voice}, speed={request.speed}, text_length={len(request.text)}")
+        
+        # Generate speech using OpenAI TTS
+        tts_start = time.time()
+        
+        response = api_clients.openai_client.audio.speech.create(
+            model="tts-1",
+            voice=request.voice,
+            input=request.text,
+            speed=request.speed
+        )
+        
+        # Save audio to file
+        with open(file_path, "wb") as audio_file:
+            for chunk in response.iter_bytes():
+                audio_file.write(chunk)
+        
+        tts_time = time.time() - tts_start
+        total_time = time.time() - start_time
+        
+        # Get file size
+        file_size = file_path.stat().st_size
+        
+        # Create URL for accessing the audio file
+        audio_url = f"/static/audio/{filename}"
+        
+        logger.info(f"✅ TTS generated in {tts_time:.2f}s, file size: {file_size} bytes")
+        
+        return TTSResponse(
+            audio_file_path=str(file_path),
+            audio_url=audio_url,
+            generation_time=tts_time,
+            text_length=len(request.text),
+            voice_used=request.voice,
+            file_size_bytes=file_size
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating TTS: {e}")
+        raise HTTPException(status_code=500, detail=f"TTS generation failed: {str(e)}")
+
+@app.post("/converse", response_model=ConverseResponse)
+async def converse(
+    conversation_id: str = Form(...),
+    audio: UploadFile = File(...),
+    voice: str = Form("alloy"),
+    speed: float = Form(1.0)
+):
+    """End-to-end voice conversation: audio → transcribe → chat → speak → audio"""
+    total_start = time.time()
+    timing = {}
+    
+    try:
+        logger.info(f"🎙️ Starting voice conversation for {conversation_id}")
+        
+        # Stage 1: Transcribe audio to text
+        transcribe_start = time.time()
+        
+        # Validate audio file
+        file_ext = Path(audio.filename).suffix.lower()
+        supported_formats = {'.wav', '.mp3', '.m4a', '.flac', '.webm', '.mp4'}
+        
+        if file_ext not in supported_formats:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported audio format: {file_ext}. Supported: {', '.join(supported_formats)}"
+            )
+        
+        # Read and validate audio content
+        audio_content = await audio.read()
+        if len(audio_content) > 25 * 1024 * 1024:  # 25MB limit
+            raise HTTPException(
+                status_code=400,
+                detail="Audio file too large. Maximum size is 25MB."
+            )
+        
+        # Transcribe audio
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as temp_file:
+            temp_file.write(audio_content)
+            temp_file_path = temp_file.name
+        
+        try:
+            with open(temp_file_path, "rb") as audio_file:
+                transcript = api_clients.openai_client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=audio_file,
+                    response_format="text"
+                )
+            
+            transcribed_text = transcript.strip()
+            timing["transcribe_time"] = time.time() - transcribe_start
+            logger.info(f"🎯 Transcribed: '{transcribed_text}' in {timing['transcribe_time']:.2f}s")
+            
+        finally:
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+        
+        # Stage 2: Chat with LLM + RAG
+        chat_start = time.time()
+        
+        # Create chat request
+        chat_request = ChatRequest(
+            conversation_id=conversation_id,
+            message=transcribed_text
+        )
+        
+        # Get chat response (reuse existing chat logic)
+        chat_response_obj = await chat(chat_request)
+        chat_response_text = chat_response_obj.response
+        rag_context_used = chat_response_obj.rag_context_used
+        rag_sources = chat_response_obj.rag_sources
+        
+        timing["chat_time"] = time.time() - chat_start
+        logger.info(f"💬 Chat response generated in {timing['chat_time']:.2f}s")
+        
+        # Stage 3: Convert response to speech
+        tts_start = time.time()
+        
+        # Validate voice and speed
+        valid_voices = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+        if voice not in valid_voices:
+            voice = "alloy"  # Default fallback
+        
+        if not (0.25 <= speed <= 4.0):
+            speed = 1.0  # Default fallback
+        
+        # Create TTS request
+        tts_request = TTSRequest(
+            text=chat_response_text,
+            voice=voice,
+            speed=speed
+        )
+        
+        # Generate speech (reuse existing TTS logic)
+        tts_response_obj = await text_to_speech(tts_request)
+        
+        timing["tts_time"] = time.time() - tts_start
+        timing["total_time"] = time.time() - total_start
+        
+        logger.info(f"🔊 TTS generated in {timing['tts_time']:.2f}s")
+        logger.info(f"🎉 Full conversation pipeline completed in {timing['total_time']:.2f}s")
+        
+        return ConverseResponse(
+            transcribed_text=transcribed_text,
+            chat_response=chat_response_text,
+            audio_file_path=tts_response_obj.audio_file_path,
+            audio_url=tts_response_obj.audio_url,
+            conversation_id=conversation_id,
+            timing=timing,
+            rag_context_used=rag_context_used,
+            rag_sources=rag_sources
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        total_time = time.time() - total_start
+        logger.error(f"💥 Conversation pipeline failed after {total_time:.2f}s: {e}")
+        raise HTTPException(status_code=500, detail=f"Conversation failed: {str(e)}")
 
 @app.post("/reset")
-async def reset_conversation():
-    return {"message": "Reset endpoint - TODO"}
+async def reset_conversation(request: ResetRequest):
+    """Reset conversation memory for a specific conversation ID"""
+    try:
+        conversation_id = request.conversation_id
+        
+        if conversation_id in conversations:
+            message_count = len(conversations[conversation_id])
+            del conversations[conversation_id]
+            logger.info(f"🧹 Reset conversation {conversation_id} ({message_count} messages cleared)")
+            
+            return {
+                "message": f"Conversation {conversation_id} reset successfully",
+                "conversation_id": conversation_id,
+                "messages_cleared": message_count
+            }
+        else:
+            return {
+                "message": f"Conversation {conversation_id} not found (already empty)",
+                "conversation_id": conversation_id,
+                "messages_cleared": 0
+            }
+            
+    except Exception as e:
+        logger.error(f"Error resetting conversation: {e}")
+        raise HTTPException(status_code=500, detail=f"Reset failed: {str(e)}")
 
 @app.post("/upload_rag_docs")
 async def upload_documents(file: UploadFile = File(...)):
@@ -400,6 +801,54 @@ async def get_document_sources():
     except Exception as e:
         logger.error(f"Error getting document sources: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get sources: {str(e)}")
+
+@app.post("/clear_and_reindex")
+async def clear_and_reindex():
+    """Clear Qdrant collection and re-index the default CSV file"""
+    try:
+        start_time = time.time()
+        
+        # Delete existing collection
+        logger.info("🗑️ Deleting existing Qdrant collection...")
+        delete_success = rag_service.delete_collection()
+        if not delete_success:
+            raise Exception("Failed to delete collection")
+        
+        # Recreate collection
+        logger.info("🏗️ Creating new collection...")
+        create_success = rag_service.ensure_collection_exists()
+        if not create_success:
+            raise Exception("Failed to create new collection")
+        
+        # Re-index the CSV file
+        csv_file = "rag_data/HackathonInternalKnowledgeBase.csv"
+        if os.path.exists(csv_file):
+            logger.info(f"📁 Re-indexing {csv_file}...")
+            
+            # Extract documents from CSV
+            documents = doc_processor.extract_text(csv_file, csv_file)
+            
+            # Process into chunks
+            processed_docs = doc_processor.process_documents(documents)
+            
+            # Index in vector database
+            result = rag_service.index_documents(processed_docs)
+            
+            total_time = time.time() - start_time
+            
+            return {
+                "message": "Collection cleared and re-indexed successfully",
+                "documents_processed": len(documents),
+                "chunks_indexed": result["indexed"],
+                "collection": result["collection"],
+                "total_time": total_time
+            }
+        else:
+            raise Exception(f"CSV file not found: {csv_file}")
+            
+    except Exception as e:
+        logger.error(f"Error clearing and re-indexing: {e}")
+        raise HTTPException(status_code=500, detail=f"Clear and re-index failed: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
